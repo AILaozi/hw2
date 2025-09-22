@@ -3,12 +3,14 @@
 #include <set>
 #include <sstream>
 #include <vector>
+#include <map>
 #include <iomanip>
 #include <algorithm>
 #include "product.h"
 #include "db_parser.h"
 #include "product_parser.h"
 #include "util.h"
+#include "mydatastore.h"
 
 using namespace std;
 struct ProdNameSorter {
@@ -29,7 +31,7 @@ int main(int argc, char* argv[])
      * Declare your derived DataStore object here replacing
      *  DataStore type to your derived type
      ****************/
-    DataStore ds;
+    MyDataStore ds;
 
 
 
@@ -62,6 +64,7 @@ int main(int argc, char* argv[])
     cout << "====================================" << endl;
 
     vector<Product*> hits;
+    map<string, vector<Product*>> carts;
     bool done = false;
     while(!done) {
         cout << "\nEnter command: " << endl;
@@ -99,17 +102,72 @@ int main(int argc, char* argv[])
                 }
                 done = true;
             }
-	    /* Add support for other commands here */
+            else if (cmd == "ADD") {
+              string userName;
+              int number;
+              Product* addItem;
 
+              if (!(ss >> userName >> number) || ds.user_.find(userName) == ds.user_.end()) {
+                cout << "Invalid request" << endl;
+                continue;
+              }
 
+              number -= 1;
 
+              if (number >= hits.size() || number < 0) {
+                cout << "Invalid request" << endl;
+                continue;
+              }
 
+              addItem = hits[number];
+
+              if (carts.find(userName) == carts.end()) {
+                vector<Product*> newCart;
+                newCart.push_back(addItem);
+                carts[userName] = newCart;
+              }
+              else {
+                carts[userName].push_back(addItem);
+              }
+            }
+            else if (cmd == "VIEWCART") {
+              string userName;
+
+              if (!(ss >> userName) || carts.find(userName) == carts.end() || ds.user_.find(userName) == ds.user_.end()) {
+                cout << "Invalid username" << endl;
+                continue;
+              }
+
+              displayProducts(carts[userName]);
+            }
+            else if (cmd == "BUYCART") {
+              string userName;
+
+              if (!(ss >> userName) || carts.find(userName) == carts.end() || ds.user_.find(userName) == ds.user_.end()) {
+                cout << "Invalid username" << endl;
+                continue;
+              }
+
+              for (int i = 0; i < carts[userName].size();) {
+                if (carts[userName][i]->getQty() > 0 && ds.user_[userName]->getBalance() >= carts[userName][i]->getPrice()) {
+                  ds.user_[userName]->deductAmount(carts[userName][i]->getPrice());
+                  std::set<Product*>::iterator temp = ds.product_.find(carts[userName][i]);
+                  (*temp)->subtractQty(1); 
+                  carts[userName].erase(carts[userName].begin() + i);
+                }
+                else {
+                  ++i;
+                }
+              }
+
+            }
             else {
                 cout << "Unknown command" << endl;
             }
         }
 
     }
+
     return 0;
 }
 
@@ -120,7 +178,7 @@ void displayProducts(vector<Product*>& hits)
     	cout << "No results found!" << endl;
     	return;
     }
-    std::sort(hits.begin(), hits.end(), ProdNameSorter());
+    //std::sort(hits.begin(), hits.end(), ProdNameSorter());
     for(vector<Product*>::iterator it = hits.begin(); it != hits.end(); ++it) {
         cout << "Hit " << setw(3) << resultNo << endl;
         cout << (*it)->displayString() << endl;

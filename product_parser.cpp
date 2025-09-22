@@ -130,8 +130,21 @@ std::string ProductBookParser::categoryID()
  */
 Product* ProductBookParser::makeProduct()
 {
+  Book* newBook = new Book("book", this->prodName_, this->price_, this->qty_);
+  newBook->isbn_ = this->isbn_;
+  newBook->author_ = this->author_;
 
+  set<string> keywords;
+  set<string> frag1 = parseStringToWords(this->prodName_);
+  set<string> frag2 = parseStringToWords(this->author_);
+  set<string> frag3;
+  frag3.insert(this->isbn_);
 
+  keywords = setUnion(frag1, frag2);
+  keywords = setUnion(keywords, frag3);
+
+  newBook->keywords_ = keywords;
+  return newBook;
 }
 
 
@@ -185,9 +198,18 @@ std::string ProductClothingParser::categoryID()
  */
 Product* ProductClothingParser::makeProduct()
 {
+  Clothing* newClothing = new Clothing("clothing", this->prodName_, this->price_, this->qty_);
+  newClothing->size_ = this->size_;
+  newClothing->brand_ = this->brand_;
 
+  set<string> keywords;
+  set<string> frag1 = parseStringToWords(this->prodName_);
+  set<string> frag2 = parseStringToWords(this->brand_);
 
+  keywords = setUnion(frag1, frag2);
 
+  newClothing->keywords_ = keywords;
+  return newClothing;
 }
 
 
@@ -245,6 +267,16 @@ std::string ProductMovieParser::categoryID()
  */
 Product* ProductMovieParser::makeProduct()
 {
+  Movie* newMovie = new Movie("movie", this->prodName_, this->price_, this->qty_);
+  newMovie->genre_ = this->genre_;
+  newMovie->rating_ = this->rating_;
 
+  set<string> keywords;
+  set<string> frag1 = parseStringToWords(this->prodName_);
+  set<string> frag2 = parseStringToWords(this->genre_);
 
+  keywords = setUnion(frag1, frag2);
+
+  newMovie->keywords_ = keywords;
+  return newMovie;
 }
